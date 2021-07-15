@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os, sys
 
-# TESTING: python -m streamlit run D:\Documentos\TheBridge\bridge_datascience_JorgeGarcia\Text_Generation_Project\src\dashboard\app.py
+# TESTING: python -m streamlit run D:\Documentos\TheBridge\TextGeneration\TextGeneration_Project\src\dashboard\app.py
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root)

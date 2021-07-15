@@ -3,7 +3,6 @@ import pandas as pd
 from PIL import Image
 import os, sys
 import requests
-import gc
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root)
@@ -16,14 +15,19 @@ dfpath = root + os.sep + 'data' + os.sep + 'BASE.csv'
 df = pd.read_csv(dfpath)
 settings_file = root + os.sep + 'src' + os.sep + "utils" + os.sep + "settings_sql.json"
 
-class StreamFuncs(Visualizer, FlaskFuncs):
+modelpath = root + os.sep + 'models'
+
+
+class StreamFuncs(Visualizer, FlaskFuncs, Preprocessor):
 
     def __init__(self, df, root, settings_file):
-        # Vizualizer class instance
+        # get self.text_in_words
         Preprocessor.__init__(self, df)
+        self.preprocess(option='word', mode='base')
+        # preprocess in character-level
+        FlaskFuncs.__init__(self, df, root, settings_file)
         self.root = root
         self.settings_file = settings_file
-        self.text_in_words = []
 
     def greet(self):
         """Method returning a streamlit text template.
@@ -44,7 +48,6 @@ class StreamFuncs(Visualizer, FlaskFuncs):
     def barchart_page(self):
         """ Returns word stats barchart on a template.
         """
-        gc.collect()
         st.title('Text Generation Machine Learning Project (GAN-Dalf)')
         st.subheader('Corpus Word Stats')
         top = st.sidebar.select_slider("Top Values",
@@ -59,7 +62,6 @@ class StreamFuncs(Visualizer, FlaskFuncs):
     def flask_page(self):
         """ Connects to the Flask API and returns the response json on a template.
         """
-        gc.collect()
         st.title('Text Generation Machine Learning Project (GAN-Dalf)')
         st.subheader('Base Dataframe from API Flask')
         r = requests.get(url="http://localhost:6060/info?token_id=B53814652")
@@ -75,20 +77,20 @@ class StreamFuncs(Visualizer, FlaskFuncs):
     def model_page(self):
         """Infrastructure for model prediction."""
         st.title('Text Generation Machine Learning Project (GAN-Dalf)')
-        st.subheader('Text Generation Models')
-        gc.collect()
-        self.preprocess()
-        self.models = self.get_models()
-        model = st.sidebar.selectbox('Select Model:', options=os.listdir(self.root + os.sep + 'models'))
-        quote_length = st.sidebar.select_slider('Quote Length:', options=range(1, 101), value=40)
-        temperature = st.sidebar.select_slider('Temperature:', options=range(2, 16), value=3)
+        st.subheader('Character-level LSTM Text Generation Model')
+        quote_length = st.sidebar.select_slider('Quote Length:', options=range(1, 501), value=40)
+        temperature = st.sidebar.select_slider('Temperature:', options=range(2, 11), value=3)
         temp = temperature/10
         st.subheader('Type input text. Leave blank for random')
         sentence = st.text_input('Input your sentence here (min 40 characters):', value='')
-        if sentence == '':
-            sentence = False
         st.subheader('Prediction')
-        st.write(self.get_predicction(model, string=sentence, quote_len=quote_length, temperature=temp))
+        if sentence == '':
+            st.write(self.predict(quote_len=quote_length, temperature=temp))
+        else:
+            try:
+                st.write(self.predict(sentence=sentence, quote_len=quote_length, temperature=temp))
+            except:
+                st.write('Invalid sequence length')
 
     def sql_page(self):
         """Brings the model_comparison table from MySQL server."""

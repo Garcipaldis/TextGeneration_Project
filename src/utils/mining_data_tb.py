@@ -119,10 +119,6 @@ class Preprocessor:
             tokens = sorted(list(set(text)))
             print("Total chars:", len(tokens))
 
-            # Dictionaries
-            token_indices = dict((c, i) for i, c in enumerate(tokens))
-            indices_token = dict((i, c) for i, c in enumerate(tokens))
-
         elif option == 'word':
             # Clean Text
             text = re.sub('<br />', ' ', text)
@@ -156,9 +152,9 @@ class Preprocessor:
             tokens = sorted(set(words) - ignored_words)
             print('Unique words after ignoring:', len(tokens))
 
-            # Dictionaries
-            token_indices = dict((c, i) for i, c in enumerate(tokens))
-            indices_token = dict((i, c) for i, c in enumerate(tokens))
+        # Dictionaries
+        token_indices = dict((c, i) for i, c in enumerate(tokens))
+        indices_token = dict((i, c) for i, c in enumerate(tokens))
 
         # Saving variables
         self.text = text

@@ -11,19 +11,14 @@ nltk.download('averaged_perceptron_tagger')
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root)
 
-from src.utils.mining_data_tb import Preprocessor
+class Visualizer():
 
-class Visualizer(Preprocessor):
-
-    def __init__(self, df):
-        Preprocessor.__init__(self, df)
-        self.text_in_words = []
+    def __init__(self, df, word_list):
+        self.data = df
+        self.text_in_words = word_list
 
     def get_word_popularity(self):
         """Returns a dataframe with the most common words from token list."""
-
-        if len(self.text_in_words) == 0:
-            self.preprocess(option='word', mode='base')
 
         tags = ['NN', 'NNS', 'NNP', 'NNPS', 'JJ', 'JS']
         tagged = nltk.pos_tag(self.text_in_words)

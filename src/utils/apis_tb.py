@@ -7,19 +7,20 @@ import pymysql
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root)
 
-from src.utils.mining_data_tb import Preprocessor
+from src.utils.models import LSTM_Generator
 from src.utils.folders_tb import Folders
 
 settings_file = root + os.sep + 'src' + os.sep + "utils" + os.sep + "settings_sql.json"
 
-class FlaskFuncs(Preprocessor, Folders):
+class FlaskFuncs(LSTM_Generator, Folders):
     """Class designed to operate with the server.py API script."""
 
-    def __init__(self, df, root, settings_file):
-        Preprocessor.__init__(self, df)
+    def __init__(self, df, root, settings_file, selection='1_Base_Quote_LSTM.h5'):
+        LSTM_Generator.__init__(self, df)
         self.root = root
         self.settings_file = settings_file
-        self.models = self.get_models()
+
+        self.load_model(self.root + os.sep + 'models' + os.sep + selection)
 
         loaded_json = self.read_json(self.settings_file)
 
@@ -30,53 +31,6 @@ class FlaskFuncs(Preprocessor, Folders):
         self.BD_NAME = loaded_json["BD_NAME"]
 
         self.SQL_ALCHEMY = 'mysql+pymysql://' + self.USER + ':' + self.PASSWORD + '@' + self.IP_DNS + ':' + str(self.PORT) + '/' + self.BD_NAME
-
-    def get_predicction(self, model, string=False, quote_len=40, temperature=1):
-        """"Returns a prediction based on the selected model. Each model requires its predefined data preprocessing.
-            - Args:
-                - model: keras model loaded in self.models.
-                - string: Input string. If false, the model predicts with a random input.
-                - quote_len: Number of characters/words to show in output. Only affects LSTM models.
-                - temperature: Sequence variance distortion. Recommended low values for character based models.
-            - Returns:
-                - Prediction
-        """
-        
-        if model == '1_Base_Quote_LSTM.h5' or model == '3_Bidirectional_LSTM.h5':
-            self.preprocess(option='character', mode='base')
-            selection = self.models[model]
-            return self.generate(selection, option='character', mode='base', 
-                                quote_len=quote_len, sentence=string, temperature=temperature)
-
-        elif model == '2_Word_Base_LSTM.h5':
-            self.preprocess(option='word', mode='base', maxlen=5)
-            selection = self.models[model]
-            return self.generate(selection, option='word', mode='base', 
-                                quote_len=quote_len, sentence=string, temperature=temperature)
-
-        elif model == '4_Char_GAN.h5':
-            self.preprocess(option='character', mode='gan')
-            selection = self.models[model]
-            return self.generate(selection, option='character', mode='gan', 
-                                quote_len=quote_len, sentence=string, temperature=temperature)
-
-        elif model == '5_Word_GAN.h5':
-            self.preprocess(option='word', mode='gan', maxlen=5)
-            selection = self.models[model]
-            return self.generate(selection, option='word', mode='gan', 
-                                quote_len=quote_len, sentence=string, temperature=temperature)
-
-        else:
-            return 'Input is not a valid model'
-
-    def get_models(self):
-        """Loads models from selected path into a list."""
-        path = self.root + os.sep + 'models'
-        files = os.listdir(path)
-
-        models = {name:keras.models.load_model(path + os.sep + name) for name in files}
-
-        return models
 
     def insert_df_to_mysql(self, input_df=None, option=1, table_name=''):
         """Inserts dataframe into MySQL server.
